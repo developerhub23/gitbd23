@@ -262,6 +262,17 @@
             margin-bottom: 6px;
         }
 
+        .captain-badge {
+            display: inline-block;
+            background: #fff3bf;
+            color: #f08c00;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-left: 5px;
+            font-weight: 600;
+        }
+
         .empty-message {
             text-align: center;
             color: #999;
@@ -288,6 +299,133 @@
             border: 1px solid #a9dfbf;
         }
 
+        .card-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn-edit, .btn-delete {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 100px;
+        }
+
+        .btn-edit {
+            background: #4dabf7;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #339af0;
+        }
+
+        .btn-delete {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #ff5252;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-cancel {
+            flex: 1;
+            padding: 12px;
+            background: #e0e0e0;
+            color: #333;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        .btn-cancel:hover {
+            background: #d0d0d0;
+        }
+
+        .btn-confirm {
+            flex: 1;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        .btn-confirm:hover {
+            background: #5568d3;
+        }
+
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 22px;
@@ -308,6 +446,14 @@
             .tab-button {
                 font-size: 14px;
                 padding: 12px;
+            }
+
+            .card-actions {
+                flex-direction: column;
+            }
+
+            .btn-edit, .btn-delete {
+                flex: 1;
             }
         }
 
@@ -334,6 +480,11 @@
 
             .group-card, .solo-card {
                 padding: 15px;
+            }
+
+            .modal-content {
+                width: 95%;
+                padding: 20px;
             }
         }
     </style>
@@ -365,10 +516,10 @@
                         <input type="text" id="topicName" placeholder="e.g., AI in Healthcare, Blockchain" required>
                     </div>
                     <div class="form-group">
-                        <label>Participant Names *</label>
+                        <label>Participant Names (First person will be Captain) *</label>
                         <div class="participants-container" id="groupParticipantsContainer">
                             <div class="participant-input">
-                                <input type="text" class="participant-name" placeholder="Participant 1 name" required>
+                                <input type="text" class="participant-name" placeholder="Captain name (can edit group)" required>
                                 <button type="button" class="btn-remove" onclick="removeGroupParticipant(this)">Remove</button>
                             </div>
                         </div>
@@ -407,9 +558,127 @@
         </div>
     </div>
 
+    <!-- MODALS -->
+    <!-- Group Edit Modal -->
+    <div id="groupEditModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Verify Captain Name to Edit</div>
+            <div id="groupEditAlert"></div>
+            <div class="form-group">
+                <label for="captainVerify">Enter Captain Name *</label>
+                <input type="text" id="captainVerify" placeholder="Enter the captain's name" required>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeGroupEditModal()">Cancel</button>
+                <button class="btn-confirm" onclick="verifyCaptainForEdit()">Verify & Edit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Group Edit Details Modal -->
+    <div id="groupEditDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Edit Group Details</div>
+            <div id="groupEditDetailsAlert"></div>
+            <div class="form-group">
+                <label for="editGroupName">Group Name *</label>
+                <input type="text" id="editGroupName" required>
+            </div>
+            <div class="form-group">
+                <label for="editTopicName">Topic Name *</label>
+                <input type="text" id="editTopicName" required>
+            </div>
+            <div class="form-group">
+                <label>Participants *</label>
+                <div class="participants-container" id="editGroupParticipantsContainer"></div>
+                <button type="button" class="btn-add-participant" onclick="addEditGroupParticipant()">+ Add Participant</button>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeGroupEditDetailsModal()">Cancel</button>
+                <button class="btn-confirm" onclick="saveGroupChanges()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Group Delete Modal -->
+    <div id="groupDeleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Verify Captain Name to Delete</div>
+            <div id="groupDeleteAlert"></div>
+            <p style="color: #666; margin-bottom: 20px;">This action cannot be undone. Are you sure?</p>
+            <div class="form-group">
+                <label for="captainVerifyDelete">Enter Captain Name *</label>
+                <input type="text" id="captainVerifyDelete" placeholder="Enter the captain's name" required>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeGroupDeleteModal()">Cancel</button>
+                <button class="btn-delete" onclick="verifyCaptainForDelete()" style="background: #ff6b6b; flex: 1;">Delete Group</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Solo Edit Modal -->
+    <div id="soloEditModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Edit Your Details</div>
+            <div id="soloEditAlert"></div>
+            <div class="form-group">
+                <label for="verifySoloName">Enter Your Name *</label>
+                <input type="text" id="verifySoloName" placeholder="Enter your name to verify" required>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeSoloEditModal()">Cancel</button>
+                <button class="btn-confirm" onclick="verifySoloForEdit()">Verify & Edit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Solo Edit Details Modal -->
+    <div id="soloEditDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Edit Your Details</div>
+            <div id="soloEditDetailsAlert"></div>
+            <div class="form-group">
+                <label for="editSoloName">Your Name *</label>
+                <input type="text" id="editSoloName" required>
+            </div>
+            <div class="form-group">
+                <label for="editSoloTopic">Topic Name *</label>
+                <input type="text" id="editSoloTopic" required>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeSoloEditDetailsModal()">Cancel</button>
+                <button class="btn-confirm" onclick="saveSoloChanges()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Solo Delete Modal -->
+    <div id="soloDeleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Verify Name to Delete</div>
+            <div id="soloDeleteAlert"></div>
+            <p style="color: #666; margin-bottom: 20px;">This action cannot be undone. Are you sure?</p>
+            <div class="form-group">
+                <label for="soloVerifyDelete">Enter Your Name *</label>
+                <input type="text" id="soloVerifyDelete" placeholder="Enter your name" required>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeSoloDeleteModal()">Cancel</button>
+                <button class="btn-delete" onclick="verifySoloForDelete()" style="background: #ff6b6b; flex: 1;">Delete</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Data Management
         const DATA_KEY = 'seminarData';
+
+        // Storage variables for edit/delete operations
+        let currentEditGroupIndex = -1;
+        let currentDeleteGroupIndex = -1;
+        let currentEditSoloIndex = -1;
+        let currentDeleteSoloIndex = -1;
 
         function getData() {
             const data = localStorage.getItem(DATA_KEY);
@@ -421,7 +690,6 @@
         }
 
         function switchTab(tabName) {
-            // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
             });
@@ -429,11 +697,9 @@
                 btn.classList.remove('active');
             });
 
-            // Show selected tab
             document.getElementById(tabName).classList.add('active');
             event.target.classList.add('active');
 
-            // Refresh display
             if (tabName === 'group') {
                 displayGroups();
             } else {
@@ -441,7 +707,7 @@
             }
         }
 
-        // GROUP FUNCTIONS
+        // ============== GROUP FUNCTIONS ==============
         function addGroupParticipant() {
             const container = document.getElementById('groupParticipantsContainer');
             const participantInput = document.createElement('div');
@@ -457,6 +723,21 @@
             btn.parentElement.remove();
         }
 
+        function addEditGroupParticipant() {
+            const container = document.getElementById('editGroupParticipantsContainer');
+            const participantInput = document.createElement('div');
+            participantInput.className = 'participant-input';
+            participantInput.innerHTML = `
+                <input type="text" class="participant-name" placeholder="Participant name" required>
+                <button type="button" class="btn-remove" onclick="removeEditGroupParticipant(this)">Remove</button>
+            `;
+            container.appendChild(participantInput);
+        }
+
+        function removeEditGroupParticipant(btn) {
+            btn.parentElement.remove();
+        }
+
         function submitGroup() {
             const groupName = document.getElementById('groupName').value.trim();
             const topicName = document.getElementById('topicName').value.trim();
@@ -468,7 +749,6 @@
             const alertDiv = document.getElementById('groupAlert');
             alertDiv.innerHTML = '';
 
-            // Validation
             if (!groupName) {
                 showAlert('groupAlert', 'Please enter a group name', 'error');
                 return;
@@ -484,19 +764,16 @@
 
             const data = getData();
 
-            // Check for duplicate topic
             if (data.groups.some(g => g.topicName.toLowerCase() === topicName.toLowerCase())) {
                 showAlert('groupAlert', '❌ This topic is already registered by another group!', 'error');
                 return;
             }
 
-            // Check for duplicate group name
             if (data.groups.some(g => g.groupName.toLowerCase() === groupName.toLowerCase())) {
                 showAlert('groupAlert', '❌ This group name is already taken!', 'error');
                 return;
             }
 
-            // Check for duplicate participant names (in any group)
             const allExistingNames = [
                 ...data.groups.flatMap(g => g.participants),
                 ...data.solo.map(s => s.name)
@@ -511,10 +788,10 @@
                 return;
             }
 
-            // Add group
             data.groups.push({
                 groupName,
                 topicName,
+                captain: participants[0],
                 participants,
                 timestamp: new Date().toISOString()
             });
@@ -530,10 +807,156 @@
             document.getElementById('topicName').value = '';
             document.getElementById('groupParticipantsContainer').innerHTML = `
                 <div class="participant-input">
-                    <input type="text" class="participant-name" placeholder="Participant 1 name" required>
+                    <input type="text" class="participant-name" placeholder="Captain name (can edit group)" required>
                     <button type="button" class="btn-remove" onclick="removeGroupParticipant(this)">Remove</button>
                 </div>
             `;
+        }
+
+        function openGroupEditModal(index) {
+            currentEditGroupIndex = index;
+            document.getElementById('groupEditAlert').innerHTML = '';
+            document.getElementById('captainVerify').value = '';
+            document.getElementById('groupEditModal').classList.add('show');
+        }
+
+        function closeGroupEditModal() {
+            document.getElementById('groupEditModal').classList.remove('show');
+            document.getElementById('captainVerify').value = '';
+        }
+
+        function verifyCaptainForEdit() {
+            const captainName = document.getElementById('captainVerify').value.trim();
+            const data = getData();
+            const group = data.groups[currentEditGroupIndex];
+
+            if (captainName.toLowerCase() !== group.captain.toLowerCase()) {
+                showAlert('groupEditAlert', '❌ Captain name does not match!', 'error');
+                return;
+            }
+
+            closeGroupEditModal();
+            openGroupEditDetailsModal();
+        }
+
+        function openGroupEditDetailsModal() {
+            const data = getData();
+            const group = data.groups[currentEditGroupIndex];
+
+            document.getElementById('editGroupName').value = group.groupName;
+            document.getElementById('editTopicName').value = group.topicName;
+
+            const container = document.getElementById('editGroupParticipantsContainer');
+            container.innerHTML = '';
+            group.participants.forEach(participant => {
+                const participantInput = document.createElement('div');
+                participantInput.className = 'participant-input';
+                participantInput.innerHTML = `
+                    <input type="text" class="participant-name" value="${participant}" required>
+                    <button type="button" class="btn-remove" onclick="removeEditGroupParticipant(this)">Remove</button>
+                `;
+                container.appendChild(participantInput);
+            });
+
+            document.getElementById('groupEditDetailsModal').classList.add('show');
+        }
+
+        function closeGroupEditDetailsModal() {
+            document.getElementById('groupEditDetailsModal').classList.remove('show');
+        }
+
+        function saveGroupChanges() {
+            const newGroupName = document.getElementById('editGroupName').value.trim();
+            const newTopicName = document.getElementById('editTopicName').value.trim();
+            const participantInputs = document.querySelectorAll('#editGroupParticipantsContainer .participant-name');
+            const newParticipants = Array.from(participantInputs)
+                .map(input => input.value.trim())
+                .filter(name => name !== '');
+
+            const alertDiv = document.getElementById('groupEditDetailsAlert');
+            alertDiv.innerHTML = '';
+
+            if (!newGroupName) {
+                showAlert('groupEditDetailsAlert', 'Please enter a group name', 'error');
+                return;
+            }
+            if (!newTopicName) {
+                showAlert('groupEditDetailsAlert', 'Please enter a topic name', 'error');
+                return;
+            }
+            if (newParticipants.length === 0) {
+                showAlert('groupEditDetailsAlert', 'Please add at least one participant', 'error');
+                return;
+            }
+
+            const data = getData();
+            const group = data.groups[currentEditGroupIndex];
+
+            // Check for duplicate group name (excluding current group)
+            if (data.groups.some((g, idx) => idx !== currentEditGroupIndex && g.groupName.toLowerCase() === newGroupName.toLowerCase())) {
+                showAlert('groupEditDetailsAlert', '❌ This group name is already taken!', 'error');
+                return;
+            }
+
+            // Check for duplicate topic (excluding current group)
+            if (data.groups.some((g, idx) => idx !== currentEditGroupIndex && g.topicName.toLowerCase() === newTopicName.toLowerCase())) {
+                showAlert('groupEditDetailsAlert', '❌ This topic is already registered!', 'error');
+                return;
+            }
+
+            // Check for duplicate participant names (excluding current group's participants)
+            const allExistingNames = [
+                ...data.groups.flatMap((g, idx) => idx !== currentEditGroupIndex ? g.participants : []),
+                ...data.solo.map(s => s.name)
+            ].map(name => name.toLowerCase());
+
+            const duplicateParticipant = newParticipants.find(p => 
+                allExistingNames.includes(p.toLowerCase())
+            );
+
+            if (duplicateParticipant) {
+                showAlert('groupEditDetailsAlert', `❌ "${duplicateParticipant}" is already registered!`, 'error');
+                return;
+            }
+
+            group.groupName = newGroupName;
+            group.topicName = newTopicName;
+            group.captain = newParticipants[0];
+            group.participants = newParticipants;
+
+            saveData(data);
+            showAlert('groupAlert', '✓ Group updated successfully!', 'success');
+            closeGroupEditDetailsModal();
+            displayGroups();
+        }
+
+        function openGroupDeleteModal(index) {
+            currentDeleteGroupIndex = index;
+            document.getElementById('groupDeleteAlert').innerHTML = '';
+            document.getElementById('captainVerifyDelete').value = '';
+            document.getElementById('groupDeleteModal').classList.add('show');
+        }
+
+        function closeGroupDeleteModal() {
+            document.getElementById('groupDeleteModal').classList.remove('show');
+            document.getElementById('captainVerifyDelete').value = '';
+        }
+
+        function verifyCaptainForDelete() {
+            const captainName = document.getElementById('captainVerifyDelete').value.trim();
+            const data = getData();
+            const group = data.groups[currentDeleteGroupIndex];
+
+            if (captainName.toLowerCase() !== group.captain.toLowerCase()) {
+                showAlert('groupDeleteAlert', '❌ Captain name does not match!', 'error');
+                return;
+            }
+
+            data.groups.splice(currentDeleteGroupIndex, 1);
+            saveData(data);
+            showAlert('groupAlert', '✓ Group deleted successfully!', 'success');
+            closeGroupDeleteModal();
+            displayGroups();
         }
 
         function displayGroups() {
@@ -554,14 +977,23 @@
                     <div class="participants-list">
                         <strong>Participants (${group.participants.length}):</strong>
                         <div>
-                            ${group.participants.map(p => `<span class="participant-badge">${p}</span>`).join('')}
+                            ${group.participants.map((p, idx) => `
+                                <span class="participant-badge">
+                                    ${p}
+                                    ${idx === 0 ? '<span class="captain-badge">CAPTAIN</span>' : ''}
+                                </span>
+                            `).join('')}
                         </div>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn-edit" onclick="openGroupEditModal(${index})">✏️ Edit (Captain)</button>
+                        <button class="btn-delete" onclick="openGroupDeleteModal(${index})">🗑️ Delete</button>
                     </div>
                 </div>
             `).join('');
         }
 
-        // SOLO FUNCTIONS
+        // ============== SOLO FUNCTIONS ==============
         function submitSolo() {
             const soloName = document.getElementById('soloName').value.trim();
             const soloTopic = document.getElementById('soloTopic').value.trim();
@@ -569,7 +1001,6 @@
             const alertDiv = document.getElementById('soloAlert');
             alertDiv.innerHTML = '';
 
-            // Validation
             if (!soloName) {
                 showAlert('soloAlert', 'Please enter your name', 'error');
                 return;
@@ -581,7 +1012,6 @@
 
             const data = getData();
 
-            // Check for duplicate name (in any group or solo)
             const allExistingNames = [
                 ...data.groups.flatMap(g => g.participants),
                 ...data.solo.map(s => s.name)
@@ -592,7 +1022,6 @@
                 return;
             }
 
-            // Check for duplicate topic
             const allTopics = [
                 ...data.groups.map(g => g.topicName.toLowerCase()),
                 ...data.solo.map(s => s.topic.toLowerCase())
@@ -603,7 +1032,6 @@
                 return;
             }
 
-            // Add solo participant
             data.solo.push({
                 name: soloName,
                 topic: soloTopic,
@@ -621,6 +1049,125 @@
             document.getElementById('soloTopic').value = '';
         }
 
+        function openSoloEditModal(index) {
+            currentEditSoloIndex = index;
+            document.getElementById('soloEditAlert').innerHTML = '';
+            document.getElementById('verifySoloName').value = '';
+            document.getElementById('soloEditModal').classList.add('show');
+        }
+
+        function closeSoloEditModal() {
+            document.getElementById('soloEditModal').classList.remove('show');
+            document.getElementById('verifySoloName').value = '';
+        }
+
+        function verifySoloForEdit() {
+            const soloName = document.getElementById('verifySoloName').value.trim();
+            const data = getData();
+            const solo = data.solo[currentEditSoloIndex];
+
+            if (soloName.toLowerCase() !== solo.name.toLowerCase()) {
+                showAlert('soloEditAlert', '❌ Name does not match!', 'error');
+                return;
+            }
+
+            closeSoloEditModal();
+            openSoloEditDetailsModal();
+        }
+
+        function openSoloEditDetailsModal() {
+            const data = getData();
+            const solo = data.solo[currentEditSoloIndex];
+
+            document.getElementById('editSoloName').value = solo.name;
+            document.getElementById('editSoloTopic').value = solo.topic;
+
+            document.getElementById('soloEditDetailsModal').classList.add('show');
+        }
+
+        function closeSoloEditDetailsModal() {
+            document.getElementById('soloEditDetailsModal').classList.remove('show');
+        }
+
+        function saveSoloChanges() {
+            const newSoloName = document.getElementById('editSoloName').value.trim();
+            const newSoloTopic = document.getElementById('editSoloTopic').value.trim();
+
+            const alertDiv = document.getElementById('soloEditDetailsAlert');
+            alertDiv.innerHTML = '';
+
+            if (!newSoloName) {
+                showAlert('soloEditDetailsAlert', 'Please enter your name', 'error');
+                return;
+            }
+            if (!newSoloTopic) {
+                showAlert('soloEditDetailsAlert', 'Please enter a topic name', 'error');
+                return;
+            }
+
+            const data = getData();
+            const solo = data.solo[currentEditSoloIndex];
+
+            // Check for duplicate name (excluding current solo)
+            const allExistingNames = [
+                ...data.groups.flatMap(g => g.participants),
+                ...data.solo.flatMap((s, idx) => idx !== currentEditSoloIndex ? [s.name] : [])
+            ].map(name => name.toLowerCase());
+
+            if (allExistingNames.includes(newSoloName.toLowerCase())) {
+                showAlert('soloEditDetailsAlert', `❌ "${newSoloName}" is already registered!`, 'error');
+                return;
+            }
+
+            // Check for duplicate topic (excluding current solo)
+            const allTopics = [
+                ...data.groups.map(g => g.topicName.toLowerCase()),
+                ...data.solo.flatMap((s, idx) => idx !== currentEditSoloIndex ? [s.topic.toLowerCase()] : [])
+            ];
+
+            if (allTopics.includes(newSoloTopic.toLowerCase())) {
+                showAlert('soloEditDetailsAlert', '❌ This topic is already registered!', 'error');
+                return;
+            }
+
+            solo.name = newSoloName;
+            solo.topic = newSoloTopic;
+
+            saveData(data);
+            showAlert('soloAlert', '✓ Details updated successfully!', 'success');
+            closeSoloEditDetailsModal();
+            displaySolo();
+        }
+
+        function openSoloDeleteModal(index) {
+            currentDeleteSoloIndex = index;
+            document.getElementById('soloDeleteAlert').innerHTML = '';
+            document.getElementById('soloVerifyDelete').value = '';
+            document.getElementById('soloDeleteModal').classList.add('show');
+        }
+
+        function closeSoloDeleteModal() {
+            document.getElementById('soloDeleteModal').classList.remove('show');
+            document.getElementById('soloVerifyDelete').value = '';
+        }
+
+        function verifySoloForDelete() {
+            const soloName = document.getElementById('soloVerifyDelete').value.trim();
+            const data = getData();
+            const solo = data.solo[currentDeleteSoloIndex];
+
+            if (soloName.toLowerCase() !== solo.name.toLowerCase()) {
+                showAlert('soloDeleteAlert', '❌ Name does not match!', 'error');
+                return;
+            }
+
+            data.solo.splice(currentDeleteSoloIndex, 1);
+            saveData(data);
+            showAlert('soloAlert', '✓ Registration deleted successfully!', 'success');
+            closeSoloDeleteModal();
+            displaySolo();
+        }
+
         function displaySolo() {
             const data = getData();
             const soloList = document.getElementById('soloList');
@@ -635,6 +1182,10 @@
                     <h3>👤 ${participant.name}</h3>
                     <div class="group-info">
                         <strong>Topic:</strong> ${participant.topic}
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn-edit" onclick="openSoloEditModal(${index})">✏️ Edit</button>
+                        <button class="btn-delete" onclick="openSoloDeleteModal(${index})">🗑️ Delete</button>
                     </div>
                 </div>
             `).join('');
