@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -194,6 +195,12 @@
         .btn-submit:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .display-section {
@@ -423,6 +430,13 @@
             background: #5568d3;
         }
 
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-size: 14px;
+        }
+
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 22px;
@@ -520,7 +534,7 @@
 
                 <div class="display-section">
                     <h2>Registered Groups</h2>
-                    <div id="groupsList"></div>
+                    <div id="groupsList"><div class="loading">Loading groups...</div></div>
                 </div>
             </div>
 
@@ -542,7 +556,7 @@
 
                 <div class="display-section">
                     <h2>Solo Participants</h2>
-                    <div id="soloList"></div>
+                    <div id="soloList"><div class="loading">Loading participants...</div></div>
                 </div>
             </div>
         </div>
@@ -659,17 +673,62 @@
         </div>
     </div>
 
-    <script>
-    
-        let currentEditGroupIndex = -1;
-        let currentDeleteGroupIndex = -1;
-        let currentEditSoloIndex = -1;
-        let currentDeleteSoloIndex = -1;
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, updateDoc } 
+        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAfvkm9LJApUwFKkw4Jz1FCRjOMjf-T_Ik",
+            authDomain: "seminar-website-b09dc.firebaseapp.com",
+            projectId: "seminar-website-b09dc",
+            storageBucket: "seminar-website-b09dc.firebasestorage.app",
+            messagingSenderId: "51017549584",
+            appId: "1:51017549584:web:b3366449f136dda3558795",
+            measurementId: "G-7KM3MF0SF2"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getFirestore(app);
+
+        let currentEditGroupId = null;
+        let currentDeleteGroupId = null;
+        let currentEditSoloId = null;
+        let currentDeleteSoloId = null;
+
+        let allGroups = [];
+        let allSolo = [];
+
+        // Fetch data from Firestore
+        async function fetchData() {
+            try {
+                // Fetch groups
+                const groupsSnapshot = await getDocs(collection(db, "groups"));
+                allGroups = [];
+                groupsSnapshot.forEach((doc) => {
+                    allGroups.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Fetch solo participants
+                const soloSnapshot = await getDocs(collection(db, "solo"));
+                allSolo = [];
+                soloSnapshot.forEach((doc) => {
+                    allSolo.push({ id: doc.id, ...doc.data() });
+                });
+
+                return { groups: allGroups, solo: allSolo };
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                return { groups: [], solo: [] };
+            }
         }
 
-        function switchTab(tabName) {
+        window.switchTab = function(tabName) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
             document.getElementById(tabName).classList.add('active');
@@ -679,7 +738,7 @@
         }
 
         // ============== GROUP FUNCTIONS ==============
-        function addGroupParticipant() {
+        window.addGroupParticipant = function() {
             const container = document.getElementById('groupParticipantsContainer');
             const div = document.createElement('div');
             div.className = 'participant-input';
@@ -690,11 +749,11 @@
             container.appendChild(div);
         }
 
-        function removeGroupParticipant(btn) {
+        window.removeGroupParticipant = function(btn) {
             btn.parentElement.remove();
         }
 
-        function addEditGroupParticipant() {
+        window.addEditGroupParticipant = function() {
             const container = document.getElementById('editGroupParticipantsContainer');
             const div = document.createElement('div');
             div.className = 'participant-input';
@@ -705,11 +764,11 @@
             container.appendChild(div);
         }
 
-        function removeEditGroupParticipant(btn) {
+        window.removeEditGroupParticipant = function(btn) {
             btn.parentElement.remove();
         }
 
-        function submitGroup() {
+        window.submitGroup = async function() {
             const groupName = document.getElementById('groupName').value.trim();
             const topicName = document.getElementById('topicName').value.trim();
             const captainPin = document.getElementById('captainPin').value.trim();
@@ -736,21 +795,22 @@
                 return;
             }
 
-            const data = getData();
+            // Fetch latest data
+            await fetchData();
 
-            if (data.groups.some(g => g.topicName.toLowerCase() === topicName.toLowerCase())) {
+            if (allGroups.some(g => g.topicName.toLowerCase() === topicName.toLowerCase())) {
                 showAlert('groupAlert', '❌ This topic is already registered!', 'error');
                 return;
             }
 
-            if (data.groups.some(g => g.groupName.toLowerCase() === groupName.toLowerCase())) {
+            if (allGroups.some(g => g.groupName.toLowerCase() === groupName.toLowerCase())) {
                 showAlert('groupAlert', '❌ This group name is already taken!', 'error');
                 return;
             }
 
             const allExistingNames = [
-                ...data.groups.flatMap(g => g.participants),
-                ...data.solo.map(s => s.name)
+                ...allGroups.flatMap(g => g.participants),
+                ...allSolo.map(s => s.name)
             ].map(name => name.toLowerCase());
 
             const duplicateParticipant = participants.find(p => allExistingNames.includes(p.toLowerCase()));
@@ -760,44 +820,49 @@
                 return;
             }
 
-            data.groups.push({
-                groupName,
-                topicName,
-                captain: participants[0],
-                pin: captainPin,
-                participants,
-                timestamp: new Date().toISOString()
-            });
+            try {
+                // Add to Firestore
+                await addDoc(collection(db, "groups"), {
+                    groupName,
+                    topicName,
+                    captain: participants[0],
+                    pin: captainPin,
+                    participants,
+                    timestamp: new Date().toISOString()
+                });
 
-            saveData(data);
-            showAlert('groupAlert', '✓ Group registered successfully!', 'success');
-            document.getElementById('groupName').value = '';
-            document.getElementById('topicName').value = '';
-            document.getElementById('captainPin').value = '';
-            document.getElementById('groupParticipantsContainer').innerHTML = `
-                <div class="participant-input">
-                    <input type="text" class="participant-name" placeholder="Captain name (first person)" required>
-                    <button type="button" class="btn-remove" onclick="removeGroupParticipant(this)">Remove</button>
-                </div>
-            `;
-            displayGroups();
+                showAlert('groupAlert', '✓ Group registered successfully!', 'success');
+                document.getElementById('groupName').value = '';
+                document.getElementById('topicName').value = '';
+                document.getElementById('captainPin').value = '';
+                document.getElementById('groupParticipantsContainer').innerHTML = `
+                    <div class="participant-input">
+                        <input type="text" class="participant-name" placeholder="Captain name (first person)" required>
+                        <button type="button" class="btn-remove" onclick="removeGroupParticipant(this)">Remove</button>
+                    </div>
+                `;
+                await fetchData();
+                displayGroups();
+            } catch (error) {
+                console.error("Error adding group:", error);
+                showAlert('groupAlert', '❌ Error saving group. Please try again.', 'error');
+            }
         }
 
-        function openGroupEditModal(index) {
-            currentEditGroupIndex = index;
+        window.openGroupEditModal = function(groupId) {
+            currentEditGroupId = groupId;
             document.getElementById('groupEditAlert').innerHTML = '';
             document.getElementById('captainPinVerify').value = '';
             document.getElementById('groupEditModal').classList.add('show');
         }
 
-        function closeGroupEditModal() {
+        window.closeGroupEditModal = function() {
             document.getElementById('groupEditModal').classList.remove('show');
         }
 
-        function verifyCaptainPin() {
+        window.verifyCaptainPin = function() {
             const pin = document.getElementById('captainPinVerify').value.trim();
-            const data = getData();
-            const group = data.groups[currentEditGroupIndex];
+            const group = allGroups.find(g => g.id === currentEditGroupId);
 
             if (pin !== group.pin) {
                 showAlert('groupEditAlert', '❌ PIN is incorrect!', 'error');
@@ -809,8 +874,7 @@
         }
 
         function openGroupEditDetailsModal() {
-            const data = getData();
-            const group = data.groups[currentEditGroupIndex];
+            const group = allGroups.find(g => g.id === currentEditGroupId);
 
             document.getElementById('editGroupName').value = group.groupName;
             document.getElementById('editTopicName').value = group.topicName;
@@ -830,11 +894,11 @@
             document.getElementById('groupEditDetailsModal').classList.add('show');
         }
 
-        function closeGroupEditDetailsModal() {
+        window.closeGroupEditDetailsModal = function() {
             document.getElementById('groupEditDetailsModal').classList.remove('show');
         }
 
-        function saveGroupChanges() {
+        window.saveGroupChanges = async function() {
             const newGroupName = document.getElementById('editGroupName').value.trim();
             const newTopicName = document.getElementById('editTopicName').value.trim();
             const participantInputs = document.querySelectorAll('#editGroupParticipantsContainer .participant-name');
@@ -856,22 +920,19 @@
                 return;
             }
 
-            const data = getData();
-            const group = data.groups[currentEditGroupIndex];
-
-            if (data.groups.some((g, idx) => idx !== currentEditGroupIndex && g.groupName.toLowerCase() === newGroupName.toLowerCase())) {
+            if (allGroups.some(g => g.id !== currentEditGroupId && g.groupName.toLowerCase() === newGroupName.toLowerCase())) {
                 showAlert('groupEditDetailsAlert', '❌ This group name is already taken!', 'error');
                 return;
             }
 
-            if (data.groups.some((g, idx) => idx !== currentEditGroupIndex && g.topicName.toLowerCase() === newTopicName.toLowerCase())) {
+            if (allGroups.some(g => g.id !== currentEditGroupId && g.topicName.toLowerCase() === newTopicName.toLowerCase())) {
                 showAlert('groupEditDetailsAlert', '❌ This topic is already registered!', 'error');
                 return;
             }
 
             const allExistingNames = [
-                ...data.groups.flatMap((g, idx) => idx !== currentEditGroupIndex ? g.participants : []),
-                ...data.solo.map(s => s.name)
+                ...allGroups.flatMap(g => g.id !== currentEditGroupId ? g.participants : []),
+                ...allSolo.map(s => s.name)
             ].map(name => name.toLowerCase());
 
             const duplicateParticipant = newParticipants.find(p => allExistingNames.includes(p.toLowerCase()));
@@ -881,55 +942,69 @@
                 return;
             }
 
-            group.groupName = newGroupName;
-            group.topicName = newTopicName;
-            group.captain = newParticipants[0];
-            group.participants = newParticipants;
+            try {
+                const groupRef = doc(db, "groups", currentEditGroupId);
+                await updateDoc(groupRef, {
+                    groupName: newGroupName,
+                    topicName: newTopicName,
+                    captain: newParticipants[0],
+                    participants: newParticipants
+                });
 
-            saveData(data);
-            showAlert('groupAlert', '✓ Group updated successfully!', 'success');
-            closeGroupEditDetailsModal();
-            displayGroups();
+                showAlert('groupAlert', '✓ Group updated successfully!', 'success');
+                closeGroupEditDetailsModal();
+                await fetchData();
+                displayGroups();
+            } catch (error) {
+                console.error("Error updating group:", error);
+                showAlert('groupEditDetailsAlert', '❌ Error updating group. Please try again.', 'error');
+            }
         }
 
-        function openGroupDeleteModal(index) {
-            currentDeleteGroupIndex = index;
+        window.openGroupDeleteModal = function(groupId) {
+            currentDeleteGroupId = groupId;
             document.getElementById('groupDeleteAlert').innerHTML = '';
             document.getElementById('captainPinDelete').value = '';
             document.getElementById('groupDeleteModal').classList.add('show');
         }
 
-        function closeGroupDeleteModal() {
+        window.closeGroupDeleteModal = function() {
             document.getElementById('groupDeleteModal').classList.remove('show');
         }
 
-        function verifyCaptainPinDelete() {
+        window.verifyCaptainPinDelete = async function() {
             const pin = document.getElementById('captainPinDelete').value.trim();
-            const data = getData();
-            const group = data.groups[currentDeleteGroupIndex];
+            const group = allGroups.find(g => g.id === currentDeleteGroupId);
 
             if (pin !== group.pin) {
                 showAlert('groupDeleteAlert', '❌ PIN is incorrect!', 'error');
                 return;
             }
 
-            data.groups.splice(currentDeleteGroupIndex, 1);
-            saveData(data);
-            showAlert('groupAlert', '✓ Group deleted successfully!', 'success');
-            closeGroupDeleteModal();
-            displayGroups();
+            try {
+                await deleteDoc(doc(db, "groups", currentDeleteGroupId));
+                showAlert('groupAlert', '✓ Group deleted successfully!', 'success');
+                closeGroupDeleteModal();
+                await fetchData();
+                displayGroups();
+            } catch (error) {
+                console.error("Error deleting group:", error);
+                showAlert('groupDeleteAlert', '❌ Error deleting group. Please try again.', 'error');
+            }
         }
 
-        function displayGroups() {
-            const data = getData();
+        async function displayGroups() {
             const groupsList = document.getElementById('groupsList');
+            groupsList.innerHTML = '<div class="loading">Loading groups...</div>';
 
-            if (data.groups.length === 0) {
+            await fetchData();
+
+            if (allGroups.length === 0) {
                 groupsList.innerHTML = '<div class="empty-message">No groups registered yet. Be the first to register!</div>';
                 return;
             }
 
-            groupsList.innerHTML = data.groups.map((group, index) => `
+            groupsList.innerHTML = allGroups.map(group => `
                 <div class="group-card">
                     <h3>📌 ${group.groupName}</h3>
                     <div class="group-info">
@@ -947,15 +1022,15 @@
                         </div>
                     </div>
                     <div class="card-actions">
-                        <button class="btn-edit" onclick="openGroupEditModal(${index})">✏️ Edit</button>
-                        <button class="btn-delete" onclick="openGroupDeleteModal(${index})">🗑️ Delete</button>
+                        <button class="btn-edit" onclick="openGroupEditModal('${group.id}')">✏️ Edit</button>
+                        <button class="btn-delete" onclick="openGroupDeleteModal('${group.id}')">🗑️ Delete</button>
                     </div>
                 </div>
             `).join('');
         }
 
         // ============== SOLO FUNCTIONS ==============
-        function submitSolo() {
+        window.submitSolo = async function() {
             const soloName = document.getElementById('soloName').value.trim();
             const soloTopic = document.getElementById('soloTopic').value.trim();
 
@@ -971,11 +1046,12 @@
                 return;
             }
 
-            const data = getData();
+            // Fetch latest data
+            await fetchData();
 
             const allExistingNames = [
-                ...data.groups.flatMap(g => g.participants),
-                ...data.solo.map(s => s.name)
+                ...allGroups.flatMap(g => g.participants),
+                ...allSolo.map(s => s.name)
             ].map(name => name.toLowerCase());
 
             if (allExistingNames.includes(soloName.toLowerCase())) {
@@ -984,8 +1060,8 @@
             }
 
             const allTopics = [
-                ...data.groups.map(g => g.topicName.toLowerCase()),
-                ...data.solo.map(s => s.topic.toLowerCase())
+                ...allGroups.map(g => g.topicName.toLowerCase()),
+                ...allSolo.map(s => s.topic.toLowerCase())
             ];
 
             if (allTopics.includes(soloTopic.toLowerCase())) {
@@ -993,34 +1069,38 @@
                 return;
             }
 
-            data.solo.push({
-                name: soloName,
-                topic: soloTopic,
-                timestamp: new Date().toISOString()
-            });
+            try {
+                await addDoc(collection(db, "solo"), {
+                    name: soloName,
+                    topic: soloTopic,
+                    timestamp: new Date().toISOString()
+                });
 
-            saveData(data);
-            showAlert('soloAlert', '✓ Solo registration successful!', 'success');
-            document.getElementById('soloName').value = '';
-            document.getElementById('soloTopic').value = '';
-            displaySolo();
+                showAlert('soloAlert', '✓ Solo registration successful!', 'success');
+                document.getElementById('soloName').value = '';
+                document.getElementById('soloTopic').value = '';
+                await fetchData();
+                displaySolo();
+            } catch (error) {
+                console.error("Error adding solo participant:", error);
+                showAlert('soloAlert', '❌ Error saving registration. Please try again.', 'error');
+            }
         }
 
-        function openSoloEditModal(index) {
-            currentEditSoloIndex = index;
+        window.openSoloEditModal = function(soloId) {
+            currentEditSoloId = soloId;
             document.getElementById('soloEditAlert').innerHTML = '';
             document.getElementById('verifySoloName').value = '';
             document.getElementById('soloEditModal').classList.add('show');
         }
 
-        function closeSoloEditModal() {
+        window.closeSoloEditModal = function() {
             document.getElementById('soloEditModal').classList.remove('show');
         }
 
-        function verifySoloForEdit() {
+        window.verifySoloForEdit = function() {
             const soloName = document.getElementById('verifySoloName').value.trim();
-            const data = getData();
-            const solo = data.solo[currentEditSoloIndex];
+            const solo = allSolo.find(s => s.id === currentEditSoloId);
 
             if (soloName.toLowerCase() !== solo.name.toLowerCase()) {
                 showAlert('soloEditAlert', '❌ Name does not match!', 'error');
@@ -1032,8 +1112,7 @@
         }
 
         function openSoloEditDetailsModal() {
-            const data = getData();
-            const solo = data.solo[currentEditSoloIndex];
+            const solo = allSolo.find(s => s.id === currentEditSoloId);
 
             document.getElementById('editSoloName').value = solo.name;
             document.getElementById('editSoloTopic').value = solo.topic;
@@ -1041,11 +1120,11 @@
             document.getElementById('soloEditDetailsModal').classList.add('show');
         }
 
-        function closeSoloEditDetailsModal() {
+        window.closeSoloEditDetailsModal = function() {
             document.getElementById('soloEditDetailsModal').classList.remove('show');
         }
 
-        function saveSoloChanges() {
+        window.saveSoloChanges = async function() {
             const newSoloName = document.getElementById('editSoloName').value.trim();
             const newSoloTopic = document.getElementById('editSoloTopic').value.trim();
 
@@ -1061,12 +1140,9 @@
                 return;
             }
 
-            const data = getData();
-            const solo = data.solo[currentEditSoloIndex];
-
             const allExistingNames = [
-                ...data.groups.flatMap(g => g.participants),
-                ...data.solo.flatMap((s, idx) => idx !== currentEditSoloIndex ? [s.name] : [])
+                ...allGroups.flatMap(g => g.participants),
+                ...allSolo.flatMap(s => s.id !== currentEditSoloId ? [s.name] : [])
             ].map(name => name.toLowerCase());
 
             if (allExistingNames.includes(newSoloName.toLowerCase())) {
@@ -1075,8 +1151,8 @@
             }
 
             const allTopics = [
-                ...data.groups.map(g => g.topicName.toLowerCase()),
-                ...data.solo.flatMap((s, idx) => idx !== currentEditSoloIndex ? [s.topic.toLowerCase()] : [])
+                ...allGroups.map(g => g.topicName.toLowerCase()),
+                ...allSolo.flatMap(s => s.id !== currentEditSoloId ? [s.topic.toLowerCase()] : [])
             ];
 
             if (allTopics.includes(newSoloTopic.toLowerCase())) {
@@ -1084,61 +1160,75 @@
                 return;
             }
 
-            solo.name = newSoloName;
-            solo.topic = newSoloTopic;
+            try {
+                const soloRef = doc(db, "solo", currentEditSoloId);
+                await updateDoc(soloRef, {
+                    name: newSoloName,
+                    topic: newSoloTopic
+                });
 
-            saveData(data);
-            showAlert('soloAlert', '✓ Details updated successfully!', 'success');
-            closeSoloEditDetailsModal();
-            displaySolo();
+                showAlert('soloAlert', '✓ Details updated successfully!', 'success');
+                closeSoloEditDetailsModal();
+                await fetchData();
+                displaySolo();
+            } catch (error) {
+                console.error("Error updating solo participant:", error);
+                showAlert('soloEditDetailsAlert', '❌ Error updating details. Please try again.', 'error');
+            }
         }
 
-        function openSoloDeleteModal(index) {
-            currentDeleteSoloIndex = index;
+        window.openSoloDeleteModal = function(soloId) {
+            currentDeleteSoloId = soloId;
             document.getElementById('soloDeleteAlert').innerHTML = '';
             document.getElementById('soloVerifyDelete').value = '';
             document.getElementById('soloDeleteModal').classList.add('show');
         }
 
-        function closeSoloDeleteModal() {
+        window.closeSoloDeleteModal = function() {
             document.getElementById('soloDeleteModal').classList.remove('show');
         }
 
-        function verifySoloForDelete() {
+        window.verifySoloForDelete = async function() {
             const soloName = document.getElementById('soloVerifyDelete').value.trim();
-            const data = getData();
-            const solo = data.solo[currentDeleteSoloIndex];
+            const solo = allSolo.find(s => s.id === currentDeleteSoloId);
 
             if (soloName.toLowerCase() !== solo.name.toLowerCase()) {
                 showAlert('soloDeleteAlert', '❌ Name does not match!', 'error');
                 return;
             }
 
-            data.solo.splice(currentDeleteSoloIndex, 1);
-            saveData(data);
-            showAlert('soloAlert', '✓ Registration deleted successfully!', 'success');
-            closeSoloDeleteModal();
-            displaySolo();
+            try {
+                await deleteDoc(doc(db, "solo", currentDeleteSoloId));
+                showAlert('soloAlert', '✓ Registration deleted successfully!', 'success');
+                closeSoloDeleteModal();
+                await fetchData();
+                displaySolo();
+            } catch (error) {
+                console.error("Error deleting solo participant:", error);
+                showAlert('soloDeleteAlert', '❌ Error deleting registration. Please try again.', 'error');
+            }
         }
 
-        function displaySolo() {
-            const data = getData();
+        async function displaySolo() {
             const soloList = document.getElementById('soloList');
+            soloList.innerHTML = '<div class="loading">Loading participants...</div>';
 
-            if (data.solo.length === 0) {
+            await fetchData();
+
+            if (allSolo.length === 0) {
                 soloList.innerHTML = '<div class="empty-message">No solo participants yet. Register now!</div>';
                 return;
             }
 
-            soloList.innerHTML = data.solo.map((participant, index) => `
+            soloList.innerHTML = allSolo.map(participant => `
                 <div class="solo-card">
                     <h3>👤 ${participant.name}</h3>
                     <div class="group-info">
                         <strong>Topic:</strong> ${participant.topic}
                     </div>
                     <div class="card-actions">
-                        <button class="btn-edit" onclick="openSoloEditModal(${index})">✏️ Edit</button>
-                        <button class="btn-delete" onclick="openSoloDeleteModal(${index})">🗑️ Delete</button>
+                        <button class="btn-edit" onclick="openSoloEditModal('${participant.id}')">✏️ Edit</button>
+                        <button class="btn-delete" onclick="openSoloDeleteModal('${participant.id}')">🗑️ Delete</button>
                     </div>
                 </div>
             `).join('');
@@ -1152,31 +1242,11 @@
             }, 4000);
         }
 
-        window.addEventListener('load', () => {
+        // Initial load
+        window.addEventListener('load', async () => {
+            await fetchData();
             displayGroups();
         });
-        type="module">
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs } 
-from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyAfvkm9LJApUwFKkw4Jz1FCRjOMjf-T_Ik",
-  authDomain: "seminar-website-b09dc.firebaseapp.com",
-  projectId: "seminar-website-b09dc",
-  storageBucket: "seminar-website-b09dc.firebasestorage.app",
-  messagingSenderId: "51017549584",
-  appId: "1:51017549584:web:b3366449f136dda3558795"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-window.db = db;
-window.collection = collection;
-window.addDoc = addDoc;
-window.getDocs = getDocs;
     </script>
 </body>
 </html>
