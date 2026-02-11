@@ -660,19 +660,13 @@
     </div>
 
     <script>
-        const DATA_KEY = 'seminarData';
+    
         let currentEditGroupIndex = -1;
         let currentDeleteGroupIndex = -1;
         let currentEditSoloIndex = -1;
         let currentDeleteSoloIndex = -1;
 
-        function getData() {
-            const data = localStorage.getItem(DATA_KEY);
-            return data ? JSON.parse(data) : { groups: [], solo: [] };
-        }
-
-        function saveData(data) {
-            localStorage.setItem(DATA_KEY, JSON.stringify(data));
+        
         }
 
         function switchTab(tabName) {
@@ -1161,6 +1155,28 @@
         window.addEventListener('load', () => {
             displayGroups();
         });
+        type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs } 
+from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAfvkm9LJApUwFKkw4Jz1FCRjOMjf-T_Ik",
+  authDomain: "seminar-website-b09dc.firebaseapp.com",
+  projectId: "seminar-website-b09dc",
+  storageBucket: "seminar-website-b09dc.firebasestorage.app",
+  messagingSenderId: "51017549584",
+  appId: "1:51017549584:web:b3366449f136dda3558795"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.db = db;
+window.collection = collection;
+window.addDoc = addDoc;
+window.getDocs = getDocs;
     </script>
 </body>
 </html>
