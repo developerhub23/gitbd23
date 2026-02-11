@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vikash Institute - Seminar Registration</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f5f5f5;
+            border-bottom: 2px solid #e0e0e0;
+            margin: 0;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .tab-button:hover {
+            background: #fafafa;
+        }
+
+        .content {
+            padding: 30px 20px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-section {
+            background: #f9f9f9;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .form-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .participants-container {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .participant-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .participant-input input {
+            flex: 1;
+        }
+
+        .btn-remove {
+            padding: 12px 15px;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .btn-remove:hover {
+            background: #ff5252;
+        }
+
+        .btn-add-participant {
+            padding: 10px 20px;
+            background: #51cf66;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-add-participant:hover {
+            background: #40c057;
+        }
+
+        .btn-submit {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        .display-section {
+            margin-top: 30px;
+        }
+
+        .display-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        .group-card, .solo-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: box-shadow 0.3s;
+        }
+
+        .group-card:hover, .solo-card:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .group-card h3, .solo-card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .group-info {
+            margin-bottom: 10px;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .group-info strong {
+            color: #333;
+        }
+
+        .participants-list {
+            background: #f9f9f9;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            border-left: 3px solid #667eea;
+        }
+
+        .participants-list strong {
+            display: block;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .participant-badge {
+            display: inline-block;
+            background: #e7f5ff;
+            color: #1971c2;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-right: 8px;
+            margin-bottom: 6px;
+        }
+
+        .empty-message {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+            font-size: 14px;
+        }
+
+        .alert {
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .alert-error {
+            background: #ffe0e0;
+            color: #d63031;
+            border: 1px solid #ffb3b3;
+        }
+
+        .alert-success {
+            background: #e8f8f5;
+            color: #27ae60;
+            border: 1px solid #a9dfbf;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .content {
+                padding: 20px 15px;
+            }
+
+            .form-section {
+                padding: 20px 15px;
+            }
+
+            .tabs {
+                flex-direction: row;
+            }
+
+            .tab-button {
+                font-size: 14px;
+                padding: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .header {
+                padding: 25px 15px;
+            }
+
+            .header h1 {
+                font-size: 18px;
+            }
+
+            .content {
+                padding: 15px;
+            }
+
+            .form-group input, .form-group textarea {
+                font-size: 16px;
+            }
+
+            .group-card, .solo-card {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎓 Vikash Institute of Technology</h1>
+            <p>Seminar Registration Portal</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('group')">Group Registration</button>
+            <button class="tab-button" onclick="switchTab('solo')">Solo Registration</button>
+        </div>
+
+        <div class="content">
+            <!-- GROUP TAB -->
+            <div id="group" class="tab-content active">
+                <div class="form-section">
+                    <h2>Register Your Group</h2>
+                    <div id="groupAlert"></div>
+                    <div class="form-group">
+                        <label for="groupName">Group Name *</label>
+                        <input type="text" id="groupName" placeholder="e.g., Team Alpha, Group A" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="topicName">Topic Name *</label>
+                        <input type="text" id="topicName" placeholder="e.g., AI in Healthcare, Blockchain" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Participant Names *</label>
+                        <div class="participants-container" id="groupParticipantsContainer">
+                            <div class="participant-input">
+                                <input type="text" class="participant-name" placeholder="Participant 1 name" required>
+                                <button type="button" class="btn-remove" onclick="removeGroupParticipant(this)">Remove</button>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-add-participant" onclick="addGroupParticipant()">+ Add Participant</button>
+                    </div>
+                    <button class="btn-submit" onclick="submitGroup()">Submit Group</button>
+                </div>
+
+                <div class="display-section">
+                    <h2>Registered Groups</h2>
+                    <div id="groupsList"></div>
+                </div>
+            </div>
+
+            <!-- SOLO TAB -->
+            <div id="solo" class="tab-content">
+                <div class="form-section">
+                    <h2>Register Solo Participation</h2>
+                    <div id="soloAlert"></div>
+                    <div class="form-group">
+                        <label for="soloName">Your Name *</label>
+                        <input type="text" id="soloName" placeholder="Enter your full name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="soloTopic">Topic Name *</label>
+                        <input type="text" id="soloTopic" placeholder="e.g., Cloud Computing, Cybersecurity" required>
+                    </div>
+                    <button class="btn-submit" onclick="submitSolo()">Submit Solo Registration</button>
+                </div>
+
+                <div class="display-section">
+                    <h2>Solo Participants</h2>
+                    <div id="soloList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data Management
+        const DATA_KEY = 'seminarData';
+
+        function getData() {
+            const data = localStorage.getItem(DATA_KEY);
+            return data ? JSON.parse(data) : { groups: [], solo: [] };
+        }
+
+        function saveData(data) {
+            localStorage.setItem(DATA_KEY, JSON.stringify(data));
+        }
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            // Refresh display
+            if (tabName === 'group') {
+                displayGroups();
+            } else {
+                displaySolo();
+            }
+        }
+
+        // GROUP FUNCTIONS
+        function addGroupParticipant() {
+            const container = document.getElementById('groupParticipantsContainer');
+            const participantInput = document.createElement('div');
+            participantInput.className = 'participant-input';
+            participantInput.innerHTML = `
+                <input type="text" class="participant-name" placeholder="Participant name" required>
+                <button type="button" class="btn-remove" onclick="removeGroupParticipant(this)">Remove</button>
+            `;
+            container.appendChild(participantInput);
+        }
+
+        function removeGroupParticipant(btn) {
+            btn.parentElement.remove();
+        }
+
+        function submitGroup() {
+            const groupName = document.getElementById('groupName').value.trim();
+            const topicName = document.getElementById('topicName').value.trim();
+            const participantInputs = document.querySelectorAll('#groupParticipantsContainer .participant-name');
+            const participants = Array.from(participantInputs)
+                .map(input => input.value.trim())
+                .filter(name => name !== '');
+
+            const alertDiv = document.getElementById('groupAlert');
+            alertDiv.innerHTML = '';
+
+            // Validation
+            if (!groupName) {
+                showAlert('groupAlert', 'Please enter a group name', 'error');
+                return;
+            }
+            if (!topicName) {
+                showAlert('groupAlert', 'Please enter a topic name', 'error');
+                return;
+            }
+            if (participants.length === 0) {
+                showAlert('groupAlert', 'Please add at least one participant', 'error');
+                return;
+            }
+
+            const data = getData();
+
+            // Check for duplicate topic
+            if (data.groups.some(g => g.topicName.toLowerCase() === topicName.toLowerCase())) {
+                showAlert('groupAlert', '❌ This topic is already registered by another group!', 'error');
+                return;
+            }
+
+            // Check for duplicate group name
+            if (data.groups.some(g => g.groupName.toLowerCase() === groupName.toLowerCase())) {
+                showAlert('groupAlert', '❌ This group name is already taken!', 'error');
+                return;
+            }
+
+            // Check for duplicate participant names (in any group)
+            const allExistingNames = [
+                ...data.groups.flatMap(g => g.participants),
+                ...data.solo.map(s => s.name)
+            ].map(name => name.toLowerCase());
+
+            const duplicateParticipant = participants.find(p => 
+                allExistingNames.includes(p.toLowerCase())
+            );
+
+            if (duplicateParticipant) {
+                showAlert('groupAlert', `❌ "${duplicateParticipant}" is already registered!`, 'error');
+                return;
+            }
+
+            // Add group
+            data.groups.push({
+                groupName,
+                topicName,
+                participants,
+                timestamp: new Date().toISOString()
+            });
+
+            saveData(data);
+            showAlert('groupAlert', '✓ Group registered successfully!', 'success');
+            clearGroupForm();
+            displayGroups();
+        }
+
+        function clearGroupForm() {
+            document.getElementById('groupName').value = '';
+            document.getElementById('topicName').value = '';
+            document.getElementById('groupParticipantsContainer').innerHTML = `
+                <div class="participant-input">
+                    <input type="text" class="participant-name" placeholder="Participant 1 name" required>
+                    <button type="button" class="btn-remove" onclick="removeGroupParticipant(this)">Remove</button>
+                </div>
+            `;
+        }
+
+        function displayGroups() {
+            const data = getData();
+            const groupsList = document.getElementById('groupsList');
+
+            if (data.groups.length === 0) {
+                groupsList.innerHTML = '<div class="empty-message">No groups registered yet. Be the first to register!</div>';
+                return;
+            }
+
+            groupsList.innerHTML = data.groups.map((group, index) => `
+                <div class="group-card">
+                    <h3>📌 ${group.groupName}</h3>
+                    <div class="group-info">
+                        <strong>Topic:</strong> ${group.topicName}
+                    </div>
+                    <div class="participants-list">
+                        <strong>Participants (${group.participants.length}):</strong>
+                        <div>
+                            ${group.participants.map(p => `<span class="participant-badge">${p}</span>`).join('')}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // SOLO FUNCTIONS
+        function submitSolo() {
+            const soloName = document.getElementById('soloName').value.trim();
+            const soloTopic = document.getElementById('soloTopic').value.trim();
+
+            const alertDiv = document.getElementById('soloAlert');
+            alertDiv.innerHTML = '';
+
+            // Validation
+            if (!soloName) {
+                showAlert('soloAlert', 'Please enter your name', 'error');
+                return;
+            }
+            if (!soloTopic) {
+                showAlert('soloAlert', 'Please enter a topic name', 'error');
+                return;
+            }
+
+            const data = getData();
+
+            // Check for duplicate name (in any group or solo)
+            const allExistingNames = [
+                ...data.groups.flatMap(g => g.participants),
+                ...data.solo.map(s => s.name)
+            ].map(name => name.toLowerCase());
+
+            if (allExistingNames.includes(soloName.toLowerCase())) {
+                showAlert('soloAlert', `❌ "${soloName}" is already registered!`, 'error');
+                return;
+            }
+
+            // Check for duplicate topic
+            const allTopics = [
+                ...data.groups.map(g => g.topicName.toLowerCase()),
+                ...data.solo.map(s => s.topic.toLowerCase())
+            ];
+
+            if (allTopics.includes(soloTopic.toLowerCase())) {
+                showAlert('soloAlert', '❌ This topic is already registered!', 'error');
+                return;
+            }
+
+            // Add solo participant
+            data.solo.push({
+                name: soloName,
+                topic: soloTopic,
+                timestamp: new Date().toISOString()
+            });
+
+            saveData(data);
+            showAlert('soloAlert', '✓ Solo registration successful!', 'success');
+            clearSoloForm();
+            displaySolo();
+        }
+
+        function clearSoloForm() {
+            document.getElementById('soloName').value = '';
+            document.getElementById('soloTopic').value = '';
+        }
+
+        function displaySolo() {
+            const data = getData();
+            const soloList = document.getElementById('soloList');
+
+            if (data.solo.length === 0) {
+                soloList.innerHTML = '<div class="empty-message">No solo participants yet. Register now!</div>';
+                return;
+            }
+
+            soloList.innerHTML = data.solo.map((participant, index) => `
+                <div class="solo-card">
+                    <h3>👤 ${participant.name}</h3>
+                    <div class="group-info">
+                        <strong>Topic:</strong> ${participant.topic}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // UTILITY FUNCTIONS
+        function showAlert(elementId, message, type) {
+            const alertDiv = document.getElementById(elementId);
+            alertDiv.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => {
+                alertDiv.innerHTML = '';
+            }, 4000);
+        }
+
+        // Initial Display
+        window.addEventListener('load', () => {
+            displayGroups();
+        });
+    </script>
+</body>
+</html>
